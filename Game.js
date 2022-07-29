@@ -2,510 +2,270 @@ const canvas = document.getElementById('canvas')
 const ctx = canvas.getContext('2d')
 canvas.focus()
 
-// one degree in radians
-const DR = 0.0174533
+const SW = canvas.clientWidth
+const SH = canvas.clientHeight
+const SW2 = canvas.clientWidth / 2
+const SH2 = canvas.clientHeight / 2
 
+// Converts degrees to radians
 function degToRad(a) {
   return a * Math.PI / 180
 }
+class Player {
+  constructor(x, y, z, a, l) {
+    // Player position, z is up
+    this.x = x
+    this.y = y
+    this.z = z
+    this.a = a // Player angle of roation left and right
+    this.l = l // Variable to look up and down
 
-function fixAng(a) {
-  if (a > 359) {
-    a -= 360
   }
-  if (a < 0) {
-    a += 360
-  }
-  return a
 }
 
-// player position
-let px, py, pdx, pdy, pa = 0
-// player movement
-let left, right, up, down = false
-
-const All_Textures =                                  //all 32x32 textures
-[
- //Checkerboard
- 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,1,1,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,1,1,1,1,1,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,1,1,1,1,1,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,1,1,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
-
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0,
-
- 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
-
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 
- //Brick
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
- 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1,
- 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1,
- 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1,
- 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1,
- 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1,
- 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1,
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
-
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
-
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
- 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1,
- 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1,
- 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1,
- 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1,
- 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1,
- 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1,
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
-
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
- //Window
- 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,    
-       
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 
- 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 
-
- 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,   
-       
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,  
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1,
- 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 
- 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 
- //Door
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,  
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,  
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,    
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,    
- 0,0,0,1,1,1,1,1, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 1,1,1,1,1,0,0,0,  
- 0,0,0,1,0,0,0,1, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 1,0,0,0,1,0,0,0,  
- 0,0,0,1,0,0,0,1, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 1,0,0,0,1,0,0,0,   
- 0,0,0,1,0,0,0,1, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 1,0,0,0,1,0,0,0,     
-
- 0,0,0,1,0,0,0,1, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 1,0,0,0,1,0,0,0,  
- 0,0,0,1,0,0,0,1, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 1,0,0,0,1,0,0,0,    
- 0,0,0,1,0,0,0,1, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 1,0,0,0,1,0,0,0,    
- 0,0,0,1,0,0,0,1, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 1,0,0,0,1,0,0,0,   
- 0,0,0,1,0,0,0,1, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 1,0,0,0,1,0,0,0,  
- 0,0,0,1,0,0,0,1, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 1,0,0,0,1,0,0,0,  
- 0,0,0,1,0,0,0,1, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 1,0,0,0,1,0,0,0,  
- 0,0,0,1,1,1,1,1, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 1,1,1,1,1,0,0,0,  
-
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,1,0,1, 1,0,1,0,0,0,0,0, 0,0,0,0,0,0,0,0,  
- 0,0,0,0,0,0,0,0, 0,0,1,1,1,1,0,1, 1,0,1,1,1,1,0,0, 0,0,0,0,0,0,0,0,   
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,    
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,    
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,  
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,  
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,   
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0, 
- 
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,  
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,     
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,   
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,   
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,   
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,  
- 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,1, 1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,   
- 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,0,         
-]
-
-function drawPlayer() {
-  ctx.fillRect(px, py, 8, 8)
-  ctx.stroke()
+class Wall {
+  constructor(x1, y1, x2, y2, c) {
+    // Bottom line point 1
+    this.x1 = x1
+    this.y1 = y1
+    // Bottom line point 2
+    this.x2 = x2
+    this.y2 = y2
+    // Wall color
+    this.c = c
+  }
 }
+
+class Sector {
+  constructor(ws, we, z1, z2, x, y, d) {
+    // wall number start and end
+    this.ws = ws
+    this.we = we
+    // height of bottom and top
+    this.z1 = z1
+    this.z2 = z2
+    // center position of the sector
+    this.x = x
+    this.y = y
+    // add y distances to sort drawing order
+    this.d = d
+  }
+}
+
+// player movement will sort this out later
+let left, right, up, down, strafeLeft, strafeRight, lookUp, lookDown, moveUp, moveDown
 
 function playerMovement() {
-    if (left) {
-      pa -= 0.1
-      if (pa < 0) {
-        pa += 2 * Math.PI
-      }
-      pdx = Math.cos(pa) * 5
-      pdy = Math.sin(pa) * 5
+  if (left) {
+    P.a -= 4
+    if (P.a < 0) {
+      P.a += 360
     }
-    if (right) {
-      pa += 0.1
-      if (pa > 2 * Math.PI) {
-        pa -= 2 * Math.PI
-      }
-      pdx = Math.cos(pa) * 5
-      pdy = Math.sin(pa) * 5
+  }
+  if (right) {
+    P.a += 4
+    if (P.a > 359) {
+      P.a -= 360
     }
+  }
+  let dx = Math.sin(degToRad(P.a)) * 10
+  let dy = Math.cos(degToRad(P.a)) * 10
+  if (up) {
+    P.x += dx
+    P.y += dy
+  }
+  if (down) {
+    P.x -= dx
+    P.y -= dy
+  }
+  if (strafeLeft) {
+    P.x -= dy
+    P.y -= dx
+  }
+  if (strafeRight) {
+    P.x += dy
+    P.y += dx
+  }
+  if (lookUp) {
+    P.l -= 1
+  }
+  if (lookDown) {
+    P.l -= 1
+  }
+  if (moveUp) {
+    P.z -= 4
+  }
+  if (moveDown) {
+    P.z += 4
+  }
 
-    let xo = 0
-    if (pdx < 0) {
-      xo = -20
-    } else {
-      xo = 20
-    }
-    let yo = 0
-    if (pdy < 0) {
-      yo = -20
-    } else {
-      yo = 20
-    }
-    let ipx = Math.floor(px / 64)
-    ipx_add_xo = Math.floor((px + xo) / 64)
-    ipx_sub_xo = Math.floor((px - xo) / 64)
-    let ipy = Math.floor(py / 64)
-    ipy_add_yo = Math.floor((py + yo) / 64)
-    ipy_sub_yo = Math.floor((py - yo) / 64)
+  if (!left) {
 
-    if (up) {
-      if (map[ipy * mapX + ipx_add_xo] === 0) {
-        px += pdx
-      }
-      if (map[ipy_add_yo * mapX + ipx] === 0) {
-        py += pdy
-      }
-    }
-    if (down) {
-      if (map[ipy * mapX + ipx.sub_xo]) {
-        px -= pdx
-      }
-      if (map[ipy_sub_yo * mapX + ipx] === 0) {
-        py -= pdy
-      }
-    }
+  }
+  if (!right) {
+  
+  }
+  if (!up) {
 
-    if (!left) {
-      pa -= 0
-    }
-    if (!right) {
-      pa -= 0
-    }
-    if (!up) {
-      px -= 0
-      py -= 0
-    }
-    if (!down) {
-      px -= 0
-      py -= 0
-    }
+  }
+  if (!down) {
+
+  }
 }
 
-let mapX = 8
-let mapY = 8
-let mapS = 64
-let map = 
-[
-  1, 1, 1, 1, 1, 1, 1, 1,
-  1, 0, 0, 0, 0, 0, 0, 1,
-  1, 0, 1, 0, 1, 1, 1, 1,
-  1, 1, 0, 0, 1, 0, 0, 1,
-  1, 0, 0, 0, 0, 0, 0, 1,
-  1, 0, 0, 0, 0, 1, 0, 1,
-  1, 0, 0, 0, 0, 0, 0, 1,
-  1, 1, 1, 1, 1, 1, 1, 1,
-]
+function pixel(x, y, c) {
+  let rgb = []
+  if(c==0){ rgb[0]=255; rgb[1]=255; rgb[2]=  0;} //Yellow	
+  if(c==1){ rgb[0]=160; rgb[1]=160; rgb[2]=  0;} //Yellow darker	
+  if(c==2){ rgb[0]=  0; rgb[1]=255; rgb[2]=  0;} //Green	
+  if(c==3){ rgb[0]=  0; rgb[1]=160; rgb[2]=  0;} //Green darker	
+  if(c==4){ rgb[0]=  0; rgb[1]=255; rgb[2]=255;} //Cyan	
+  if(c==5){ rgb[0]=  0; rgb[1]=160; rgb[2]=160;} //Cyan darker
+  if(c==6){ rgb[0]=160; rgb[1]=100; rgb[2]=  0;} //brown	
+  if(c==7){ rgb[0]=110; rgb[1]= 50; rgb[2]=  0;} //brown darker
+  if(c==8){ rgb[0]=  0; rgb[1]= 60; rgb[2]=130;} //background 
+  ctx.fillStyle = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
+  ctx.fillRect(x, y, 2, 2)
+}
 
-function drawMap2D() {
-  for (let y = 0; y < mapY; y++) {
-    for (let x = 0; x < mapX; x++) {
-      if (map[y * mapX + x] === 1) {
-        ctx.fillStyle = "white"
-      } else {
-        ctx.fillStyle = "black"
-      }
-      // xo = x * mapS
-      // yo = y * mapS
-      // ctx.beginPath()
-      // ctx.moveTo(xo        + 1, yo + 1)
-      // ctx.lineTo(xo        + 1, yo + mapS - 1)
-      // ctx.lineTo(xo + mapS - 1, yo + mapS - 1)
-      // ctx.lineTo(xo + mapS - 1, yo + 1)
-      // ctx.fill()
-      ctx.fillRect(x * mapS, y * mapS, mapS - 1, mapS - 1)
+function clearBackground() {
+  for (let y = 0; y < canvas.clientHeight; y++) {
+    for (x = 0; x < canvas.clientWidth; x++) {
+      pixel(x, y, 8) // clear background color
     }
   }
 }
 
-// find the distance between two vectors (magnitude)
-function dist(ax, ay, bx, by, ang) {
-  // return Math.hypot((bx - ax)**2 + (by - ay)**2)
-  return Math.sqrt((bx - ax)**2 + (by - ay)**2)
+function clipBehindPlayer(x1, y1, z1, x2, y2, z2) {
+  let da = y1 // distance plane -> point a
+  let db = y2 // distance plane -> point b
+  let d = da - db
+  if (d === 0) {
+    d = 1
+  }
+  let s = da / (da - db) // intersection factor (between 0 and 1)
+  x1 = x1 + s * (x2 - x1)
+  y1 = y1 + s * (y2 - y1)
+  if (y1 === 0) {
+    y1 = 1
+  }
+  z1 = z1 + s * (z2 - z1)
 }
 
-function drawRays3D() {
-  let r, mx, my, mp, dof, rx, ry, ra, xo, yo, disT
-
-  ra = pa - DR * 30
-  // limit for degrees
-  if (ra < 0) {
-    ra += 2 * Math.PI
+function drawWall(x1, x2, b1, b2, t1, t2) {
+  // Hold difference in distance
+  let dyb = b2 - b1 // y distance of the bottom line
+  let dyt = t2 - t1 // y distance of the top line
+  let dx = x2 - x1  // x distance
+  if (dx === 0) { // to prevent diving by zero
+    dx = 1
   }
-  if (ra > 2 * Math.PI) {
-    ra -= 2 * Math.PI
+  let xs = x1 // hold initial x1 starting position
+  // Clip X
+  // clip left
+  if (x1 < 1) { x1 = 1 }
+  if (x2 < 1) { x2 = 1 }
+  // clip right
+  if (x1 > SW - 1) { x2 = SW - 1 }
+  if (x2 > SW - 1) { x2 = SW - 1 }
+  // draw x verticle lines
+  for (let x = x1; x < x2; x++) {
+    // the Y start and end point
+    let y1 = dyb * (x - xs + 0.5) / dx + b1 // y bottom point
+    let y2 = dyt * (x - xs + 0.5) / dx + t1 // y bottom point
+    // Clip Y
+    if ( y1 < 1) { y1 = 1 }
+    if ( y2 < 1) { y2 = 1}
+    if ( y1 > SH - 1) { y1 = SH - 1 }
+    if ( y2 > SH - 1) { y1 = 1 }
+
+    for(let y = y1; y < y2; y++) {
+      pixel(x ,y, 0)
+    }
+
   }
+}
 
-  for (r = 0; r < 60; r++) {
-    // Check Horizontal Lines
-    dof = 0
-    disH = 1000000
-    hx = px
-    hy = py
-    aTan = -1 / Math.tan(ra) // negative inverse of tangent
-    // Check to see if we are looking up or down
-    if (ra > Math.PI) {
-      ry = (((Math.floor(py) >> 6) << 6) - 0.001) // rounding the ray's y position to the nearest 64th value
-      rx = (py - ry) * aTan + px
-      yo = -64 
-      xo = -yo * aTan
-    }
+function dist(x1, y1, x2, y2) {
+  return Math.hypot((x2 - x1)**2 + (y2 - y1)**2)
+}
 
-    // Check to see if we are looking down
-    if (ra < Math.PI) {
-      ry = (((Math.floor(py) >> 6) << 6) + 64) // rounding the ray's y position to the nearest 64th value
-      rx = (py - ry) * aTan + px
-      yo = 64 
-      xo = -yo * aTan
-    }
+function draw3D() {
+  let numSect = 30
+  let wx = []; let wy = []; let wz = []
+  let CS = Math.cos(degToRad(P.a))
+  let SN = Math.sin(degToRad(P.a))
 
-    if (ra === 0 || ra === Math.PI) { // if the ray is looking straight left or right then it is impossible for the ray to hit a horizontal line
-      rx = px + 5
-      ry = py + 5
-      dof = 8
-    }
+  for (let s = 0; s < numSect; s++) {
     
-    while (dof < 8) {
-      mx = Math.floor(rx >> 6)
-      my = Math.floor(ry >> 6)
-      mp = my * mapX + mx
-
-      if (mp > 0 && mp < mapX * mapY && map[mp] === 1) { // hit a wall
-        // calculate the ray's distance from the player
-        hx = rx
-        hy = ry
-        disH = dist(px, py, hx, hy, ra)
-        dof = 8
-      } else {
-        rx += xo
-        ry += yo
-        dof += 1
-      }
-    }
-
-    // Checking vertical lines
-    dof = 0
-    disV = 1000000
-    vx = px
-    vy = py
-    nTan = -Math.tan(ra) // negative tangent
-    // Check to see if we are looking left
-    if (ra > Math.PI / 2 && ra < 3 * Math.PI / 2) {
-      rx = (((Math.floor(px) >> 6) << 6) - 0.001) // rounding the ray's y position to the nearest 64th value
-      ry = (px - rx) * nTan + py
-      xo = -64 
-      yo = -xo * nTan
-    }
-
-    // Check to see if we are looking right
-    if (ra < Math.PI / 2 || ra > 3 * Math.PI / 2) {
-      rx = (((Math.floor(px) >> 6) << 6) + 64) // rounding the ray's y position to the nearest 64th value
-      ry = (px - rx) * nTan + py
-      xo = 64 
-      yo = -xo * nTan
-    }
-
-    // Checking to see if the player is looking straight up or down
-    if (ra === 0 || ra === Math.PI) { 
-      rx = px
-      ry = py
-      dof = 8
-    }
-    
-    while (dof < 8) {
-      mx = Math.floor(rx >> 6)
-      my = Math.floor(ry >> 6)
-      mp = my * mapX + mx
-
-      if (mp > 0 && mp < mapX * mapY && map[mp] === 1) { // hit a wall
-        vx = rx
-        vy = ry
-        disV = dist(px, py, vx, vy, ra)
-        dof = 8
-      } else {
-        rx += xo
-        ry += yo
-        dof += 1
-      }
-    }
-    // vertical wall hit
-    let shade = 0
-    if (disV < disH) {
-      rx = vx
-      ry = vy
-      disT = disV
-      // ctx.strokeStyle = "#0000ff"
-      shade = 0.5
-    }
-    // horizontal wall hit
-    if (disV > disH) {
-      rx = hx
-      ry = hy
-      disT = disH
-      ctx.strokeStyle = "#1a1aff"
-    }
-
-    // Drawing the 3D scene
-    let ca = pa - ra
-    if (ca < 0) {
-      ca += 2 * Math.PI
-    }
-    if (ca > 2 * Math.PI) {
-      ca -= 2 * Math.PI
-    }
-
-    // to fix the fisheye
-    disT = disT * Math.cos(ca)
-    let lineH = (mapS * 320) / disT  // line height
-    let ty_step = 32.0 / lineH
-    let tyO = 0.0
-    if(lineH > 320) {
-      tyO = (lineH - 320) / 2
-      lineH = 320
-    }
-    //console.log("ty step: ", ty_step)
-    let lineO = 160 - (lineH >> 1)  // line offset
-
-    // let imgData = createImageData(x, lineH)
-    // draw the walls
-    let ty = tyO * ty_step
-    if (shade === 1) {
-      tx = Math.round(rx / 2) % 32
-      if (ra > 180) {
-        tx = 31 - tx
-      }
-    } else {
-      tx = Math.round(ry / 2) & 32
-      if (ra > 90 && ra < 270) {
-        rx = 31 - tx
-      }
-    }
-
-    for (let y = 0; y < lineH; y++) {
-      // c should be a number between 0 and 32 to lookup in the texture array
-      // let c = All_Textures[Math.floor(ty) * 32 + Math.floor(tx)] * shade
-      let c = All_Textures[(Math.floor(ty)&31)*32 + (Math.floor(tx)&31)+mp] * 0.7
-
-      ctx.fillStyle = `rgb(${c}, ${c}, ${c})`
-      ctx.fillRect(r * 8 + 530, y + lineO, 8, 8)
-      ty += ty_step
-      // console.log("c : ", c)
-    }
-    // ctx.beginPath()
-    // ctx.lineWidth = 8
-    // ctx.moveTo(r * 8 + 530, lineO)
-    // ctx.lineTo(r * 8 + 530, lineH + lineO)
-    // ctx.stroke()
-
-    // draw 2d
-    ctx.beginPath();
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 1;
-    ctx.moveTo(px, py);
-    ctx.lineTo(rx, ry);
-    ctx.stroke();
-
-    ra += DR
-    if (ra < 0) {
-      ra += 2 * Math.PI
-    }
-    if (ra > 2 * Math.PI) {
-      ra -= 2 * Math.PI
-    }
   }
+
+  // Offset bottom 2 points by player
+  let x1 = 40 - P.x
+  let y1 = 10 - P.y
+  let x2 = 40 - P.x
+  let y2 = 290 - P.y
+  // World X position 
+  wx[0] = x1 * CS - y1 * SN
+  wx[1] = x2 * CS - y2 * SN
+  wx[2] = wx[0]                           // top line has the same x
+  wx[3] = wx[1]
+  // World Y position (depth)
+  wy[0] = y1 * CS + x1 * SN
+  wy[1] = y2 * CS + x2 * SN
+  wy[2] = wy[0]                           // top line has the same y
+  wy[3] = wy[1]
+  // World Z height
+  wz[0] = 0 - P.z + ((P.l * wy[0]) / 32)
+  wz[1] = 0 - P.z + ((P.l * wy[1]) / 32)
+  wz[2] = wz[0] + 40                      // top line has new z
+  wz[3] = wz[1] + 40
+  // don't draw if behind the player
+  if (wy[0] < 1 && wy[1] < 1) { return }
+  // point 1 behind player, clip
+  if (wy[0] < 1) {
+    clipBehindPlayer(wx[0], wy[0], wz[0], wx[1], wy[1], wz[1]) // bottom line
+    clipBehindPlayer(wx[2], wy[2], wz[2], wx[3], wy[3], wz[3]) // top line
+  }
+  // point 2 behind player, clip
+  if (wy[1] < 1) {
+    clipBehindPlayer(wx[1], wy[1], wz[1], wx[0], wy[0], wz[0]) // bottom line
+    clipBehindPlayer(wx[3], wy[3], wz[3], wx[2], wy[2], wz[2]) // top line
+  }
+  // screen x, screen y position
+  wx[0] = wx[0] * 200 / wy[0] + SW2
+  wy[0] = wz[0] * 200 / wy[0] + SH2
+
+  wx[1] = wx[1] * 200 / wy[1] + SW2
+  wy[1] = wz[1] * 200 / wy[1] + SH2
+
+  wx[2] = wx[2] * 200 / wy[2] + SW2
+  wy[2] = wz[2] * 200 / wy[2] + SH2
+
+  wx[3] = wx[3] * 200 / wy[3] + SW2
+  wy[3] = wz[3] * 200 / wy[3] + SH2
+  // draw points
+  if (wx[0] > 0 && wx[0] < SW && wy[0] > 0 && wy[0] < SH) {
+    pixel(wx[0], wy[0], 0)
+  }
+  if (wx[0] > 0 && wx[0] < SW && wy[0] > 0 && wy[0] < SH) {
+    pixel(wx[1], wy[1], 0)
+  }
+  drawWall(wx[0], wx[1], wy[0], wy[1], wy[2], wy[3])
 }
+
 
 function init() {
-  px = 300
-  py = 300
-  pa = 1
-  pdx = Math.cos(pa) * 5
-  pdy = Math.sin(pa) * 5
-}
-
-let frame1, frame2, fps
-
-function display() {
-  frame2 = new Date()
-  fps = frame2 - frame1
-  frame1 = new Date()
+  
 }
 
 function main(timestamp) {
   ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight)
-  display()
   playerMovement()
-  drawMap2D()
-  drawPlayer()
-  drawRays3D()
+  draw3D()
   requestAnimationFrame(main)
 }
 
-init()
+let P = new Player(70, -110, z = 20, a = 0, l = 0)
 userInput()
 requestAnimationFrame(main)
